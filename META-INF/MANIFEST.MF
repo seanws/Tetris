@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: org.oversoul.tetris.ui.TetrisFrame
+Class-Path: lib/JavaAudio.jar lib/NetworkCommunications.jar lib/PanelBorder.jar

@@ -1,0 +1,92 @@
+<project name="Tetris" default="build" basedir=".">
+    <description>
+        Multiplayer Tetris game.
+    </description>
+
+  <!-- set global properties for this build -->
+  <property name="home" location="."/>
+  <property name="src" location="src"/>
+  <property name="bin" location="bin"/>
+  <property name="lib" location="lib"/>
+  <property name="distDir" location="dist"/>
+  <property name="buildDir" location="build"/>
+  <property name="appletDir" location="applet"/>
+  <property name="webDir" location="W:/applets/Tetris"/>
+  <property name="JavaAudio" location="../JavaAudio/bin/JavaAudio.jar"/>
+  <property name="PanelBorder" location="../PanelBorder/bin/PanelBorder.jar"/>
+  <property name="NetworkCommunications" location="../NetworkCommunications/bin/NetworkCommunications.jar"/>
+  <property file="src/version.properties"/>
+
+  <target name="init">
+    <tstamp/>
+  </target>
+
+  <target name="copyjars" depends="init" description="Copies the dependent jar files into the lib dir">
+    <mkdir dir="${home}/lib"/>
+	<copy file="${JavaAudio}" todir="${home}/lib" failonerror="false"/>
+	<copy file="${NetworkCommunications}" todir="${home}/lib" failonerror="false"/>
+	<copy file="${PanelBorder}" todir="${home}/lib" failonerror="false"/>
+  </target>
+
+  <target name="compile" depends="init,copyjars" description="Compiles the source code">
+  	<mkdir dir="${bin}"/>
+  	<mkdir dir="${bin}/images"/>
+  	<mkdir dir="${bin}/sounds"/>
+    <javac srcdir="${src}" destdir="${bin}" classpath="${home}/lib/JavaAudio.jar;${home}/lib/NetworkCommunications.jar;${home}/lib/PanelBorder.jar;${home}"/>
+	<copy file="${src}/version.properties" tofile="${bin}/version.properties"/>
+	<copy todir="${bin}/images">
+		<fileset dir="${src}/images" includes="**/*.gif, **/*.jpg, **/*.ico, **/*.png" excludes="**/*.db"/>
+	</copy>
+	<copy todir="${bin}/sounds">
+		<fileset dir="${src}/sounds" includes="*.wav, *.mid, *.midi, *.au"/>
+	</copy>
+  </target>
+
+  <target name="build" depends="compile" description="Generates the tetris jar file">
+	<mkdir dir="${buildDir}"/>
+	<mkdir dir="${buildDir}/lib"/>
+  	<mkdir dir="${buildDir}/config"/>
+	<jar destfile="${buildDir}/${ant.project.name}.jar" manifest="META-INF/MANIFEST.MF">
+	  <!-- <zipfileset dir="${src}" includes="**/*.java"/> -->
+	  <zipfileset dir="${bin}" includes="version.properties, **/*.class"/>
+	  <zipfileset dir="${bin}/images" includes="**/*.gif, **/*.jpg, **/*.ico, **/*.png" excludes="**/*.db" prefix="images"/>
+	  <zipfileset dir="${bin}/sounds" includes="*" prefix="sounds"/>
+	</jar>
+	<copy file="${home}/tetris.bat" todir="${buildDir}" failonerror="false"/>
+	<copy file="${home}/lib/JavaAudio.jar" todir="${buildDir}/lib" failonerror="true"/>
+	<copy file="${home}/lib/NetworkCommunications.jar" todir="${buildDir}/lib" failonerror="true"/>
+	<copy file="${home}/lib/PanelBorder.jar" todir="${buildDir}/lib" failonerror="true"/>
+  </target>
+
+  <target name="dist" depends="build" description="Generate the zip file for the current version containing the jars and the source files">
+	<mkdir dir="${distDir}"/>
+	<zip destfile="${distDir}/${ant.project.name}-v${version.major}.${version.minor}.${version.build}.zip" duplicate="fail">
+	  <zipfileset dir="${buildDir}" excludes="**/highscores.lst, **/tetris.properties" prefix="Tetris"/>
+	  <zipfileset dir="${src}" prefix="Tetris/src"/>
+	</zip>
+	<copy file="${distDir}/${ant.project.name}-v${version.major}.${version.minor}.${version.build}.zip" tofile="${distDir}/${ant.project.name}.zip" overwrite="true"/>
+  </target>
+
+  <target name="applet" depends="build" description="copy the jars needed for the applet">
+    <mkdir dir="${appletDir}/lib"/>
+	<copy todir="${appletDir}" overwrite="true">
+		<fileset dir="${buildDir}" includes="**/*.jar" excludes="*.bat"/>
+	</copy>
+	<signjar jar="${appletDir}/Tetris.jar" alias="signTetrisJars" storepass="tetrisStorepass" keypass="tetrisKeypass"/>
+	<signjar jar="${appletDir}/lib/PanelBorder.jar" alias="signTetrisJars" storepass="tetrisStorepass" keypass="tetrisKeypass"/>
+	<signjar jar="${appletDir}/lib/JavaAudio.jar" alias="signTetrisJars" storepass="tetrisStorepass" keypass="tetrisKeypass"/>
+	<signjar jar="${appletDir}/lib/NetworkCommunications.jar" alias="signTetrisJars" storepass="tetrisStorepass" keypass="tetrisKeypass"/>
+  </target>
+
+  <target name="web" depends="applet" description="Copies the updated applet files to the web server">
+	<copy todir="${webDir}" overwrite="true">
+		<fileset dir="${appletDir}" includes="Tetris.jar, TetrisApplet.html, tetris_certificate.cer, cubes.jpg"/>
+	</copy>
+  </target>
+
+  <target name="clean" description="clean up">
+	<delete file="${buildDir}/Tetris.jar"/>
+	<delete dir="${buildDir}/lib"/>
+  </target>
+
+</project>
